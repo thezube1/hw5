@@ -4,6 +4,8 @@
 #ifndef RECCHECK
 #include <set>
 #include <string>
+#include <vector>
+#include <map>
 #endif
 
 /**
@@ -21,5 +23,13 @@ std::set<std::string> wordle(
     const std::string& in,
     const std::string& floating,
     const std::set<std::string>& dict);
+
+void buildWords(
+    const std::string& templateIn,
+    std::string& working,
+    size_t index,
+    std::map<char, int>& floatingCount,
+    const std::set<std::string>& dict,
+    std::set<std::string>& out);
 
 #endif
