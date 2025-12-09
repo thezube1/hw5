@@ -20,9 +20,10 @@ void buildWords(
     std::string& working,
     size_t index,
     std::map<char, int>& floatingCount,
+    int floatingRemaining,
     const std::set<std::string>& dict,
     std::set<std::string>& out);
-bool inDict(const std::set<std::string>& dict, const std::string& s);
+
 
 
 // Definition of primary wordle function
@@ -38,13 +39,12 @@ std::set<std::string> wordle(
     // Add your code here
 
     std::set<std::string> results;
-
     std::string working = in;
     std::map<char, int> floatingCount;
     // initialize counts of floating words
     for (char letter: floating) floatingCount[letter]++;
 
-    buildWords(in, working, 0, floatingCount, dict, results);
+    buildWords(in, working, 0, floatingCount, floating.size(), dict, results);
     return results;
     
 
@@ -57,50 +57,50 @@ void buildWords(
     std::string& working,
     size_t index,
     std::map<char, int>& floatingCount,
+    int floatingRemaining,
     const std::set<std::string>& dict,
     std::set<std::string>& out)
 {
+    // count remaining black positions... we're pruning early
+    int blankPositionsLeft = 0;
+    for (size_t i = index; i < templateIn.size(); ++i) {
+        if (templateIn[i] == '-') {
+            blankPositionsLeft++;
+        }
+    }
+    
+    if (floatingRemaining > blankPositionsLeft) {
+        return;  // can't place all floating letters
+    }
+
+    // base case: all positions are filled
     if (index == working.size()) {
-        // we have filled all positions, add the word to results
-        for (auto& charCount: floatingCount) {
-            // lol nevermind case
-            if (charCount.second > 0) return;
-        }
-        // check if word is a real word
-        if (dict.find(working) != dict.end()) {
-            out.insert(working);
-        }
+        if (floatingRemaining != 0) return;
+        // check if it's a real word
+        if (dict.find(working) != dict.end()) out.insert(working);
         return;
     }
 
+    // case 1 that we have a fixed word
     if (templateIn[index] != '-') {
-        // a fixed letter, increase index to move to next character
-        working[index] = templateIn[index];
-        buildWords(templateIn, working, index+1, floatingCount, dict, out);
+        buildWords(templateIn, working, index+1, floatingCount, floatingRemaining, dict, out);
         return;
     }
 
-    // try remaining floating letters
-    for (auto& floatingChar: floatingCount) {
-        char letter = floatingChar.first;
-        int& letterCount = floatingChar.second;
-        if (letterCount == 0) continue;
-        working[index] = letter;
-        letterCount--;
-        buildWords(templateIn, working, index+1, floatingCount, dict, out);
-        letterCount++; // backtrack
-    }
-
-    // otherwise try letter from a-z
+    // case 2 try a-z for blank positions
     for (char c = 'a'; c <= 'z'; ++c) {
-        auto it = floatingCount.find(c);
-        if (it != floatingCount.end() && it->second > 0) continue; // avoid duplicating choices handled above
         working[index] = c;
-        buildWords(templateIn, working, index+1, floatingCount, dict, out);
+        
+        auto it = floatingCount.find(c);
+        // check letter is in the floating letters and if we have unused instances of it
+        if (it != floatingCount.end() && it->second > 0) {
+            it->second--;
+            buildWords(templateIn, working, index+1, floatingCount, floatingRemaining - 1, dict, out);
+            it->second++;
+            // backtrack
+        } else {
+            buildWords(templateIn, working, index+1, floatingCount, floatingRemaining, dict, out);
+        }
     }
-
 }
 
-bool inDict(const std::set<std::string>& dict, const std::string& s) {
-    return dict.find(s) != dict.end();
-}

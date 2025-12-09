@@ -29,6 +29,7 @@ void buildWords(
     std::string& working,
     size_t index,
     std::map<char, int>& floatingCount,
+    int floatingRemaining,
     const std::set<std::string>& dict,
     std::set<std::string>& out);
 
