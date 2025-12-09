@@ -88,36 +88,19 @@ void buildWords(
         return;
     }
 
-    // if floating letters equals blank positions we have to use only floating letters
-    if (floatingRemaining == blankPositionsLeft) {
-        for (auto& pair : floatingCount) {
-            if (pair.second > 0) {
-                working[index] = pair.first;
-                pair.second--;
-                buildWords(templateIn, working, index+1, floatingCount, floatingRemaining - 1, blankPositionsLeft - 1, dict, out);
-                pair.second++;
-            }
-        }
-        // skip other letters
-        return; 
-    }
 
-    // try floating letters first
-    for (auto& pair : floatingCount) {
-        if (pair.second > 0) {
-            char c = pair.first;
-            working[index] = c;
-            pair.second--;
-            buildWords(templateIn, working, index+1, floatingCount, floatingRemaining - 1, blankPositionsLeft - 1, dict, out);
-            pair.second++;
-        }
-    }
-
-    // otherwise try non-floating letters if we can afford to
     // case 2 try a-z for blank positions
     for (char c = 'a'; c <= 'z'; ++c) {
-       if (floatingCount.find(c) == floatingCount.end()) {
-            working[index] = c;
+        working[index] = c;
+        
+        auto it = floatingCount.find(c);
+        // check letter is in the floating letters and if we have unused instances of it
+        if (it != floatingCount.end() && it->second > 0) {
+            it->second--;
+            buildWords(templateIn, working, index+1, floatingCount, floatingRemaining - 1, blankPositionsLeft - 1, dict, out);
+            it->second++;
+            // backtrack
+        } else {
             buildWords(templateIn, working, index+1, floatingCount, floatingRemaining, blankPositionsLeft - 1, dict, out);
         }
     }
